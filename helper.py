@@ -38,7 +38,7 @@ def store_ticks(engine, ticks):
 
 host = 'localhost'
 user = 'root'
-password = 'Gaurav@8966'
+password = ''
 database = 'ticks'
 
 engine = get_engine(host, user, password, database)
