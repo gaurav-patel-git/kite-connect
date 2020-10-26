@@ -1,47 +1,34 @@
-import pandas as pd
-from helper import get_connection, store_ticks
-from sqlalchemy import create_engine
+import json
 
+with open('cred.json') as f:
+    cred = json.load(f)
+    host = cred['host']
+    user = cred['user']
+    password = cred['password']
+    database = cred['database']
 
-engine = create_engine(f'mysql+mysqldb://{user}:{password}@{host}/{database}', pool_recycle=3600)
-connection = get_connection(host, user, password, database)
-cursor = connection.cursor()
+import mysql.connector
+from mysql.connector import Error
 
-def make_candles(instrument_token, duration, cursor):
-    table_name = f"_{instrument_token}"
-    sqlLastRow = f""" SELECT * FROM {table_name}_{duration} order by id desc limit 1 """
-    cursor.execute(sqlLastRow)
-    last_row = cursor.fetchall()
-    print(last_row)
-    last_candle_datetime = last_row[0][1]
-    # last_candle_datetime = '2020-07-22 11:02:00'
-    sqlInstrumentTicks = f""" SELECT * FROM {table_name} WHERE date_time >= '{last_candle_datetime}' """
-    ticks = pd.read_sql(sqlInstrumentTicks, connection, index_col='date_time', parse_dates=True)
-    ticks = ticks.drop('id', axis=1)
-    candles = ticks.resample(duration).ohlc()
-    candles.columns = candles.columns.get_level_values(1)
-    candles.to_sql(f"{table_name}_{duration}", engine, if_exists='append', index=True)
-    print(candles)
-    
+try:
+    connection = mysql.connector.connect(host=host, database=database, user=user, password=password)
+    if connection.is_connected():
+        db_Info = connection.get_server_info()
+        print("Connected to MySQL Server version ", db_Info)
+        cursor = connection.cursor()
+        cursor.execute("show databases;")
+        record = cursor.fetchall()
+        for x in record:
+            print(x)
+        print("You're connected to database: ", record)
 
-make_candles("dataframe", "1min", cursor)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+except Error as e:
+    print("Error while connecting to MySQL", e)
+finally:
+    if (connection.is_connected()):
+        cursor.close()
+        connection.close()
+        print("MySQL connection is closed")
 
 
 

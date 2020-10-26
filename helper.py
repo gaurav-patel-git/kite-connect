@@ -1,16 +1,35 @@
 import pymysql
 from sqlalchemy import create_engine
-import datetime
+import datetime, json
 import pandas as pd
 
 def get_engine(host, user, password, database, timeout=3600):
     try:
-        connection_string = f'mysql+mysqldb://{user}:{password}@{host}/{database}'
-        engine = create_engine(connection_string, pool_recycle=timeout)
+        connection_string = f'mysql+pymysql://{user}:{password}@{host}/{database}'
+        engine = create_engine(connection_string)
         print("Connected to MySQL Server ")
         return engine
     except:
         print("Error while connecting to MySQL")
+
+         
+
+with open('cred.json') as f:
+    cred = json.load(f)
+    host = cred['host']
+    user = cred['user']
+    password = cred['password']
+    database = cred['database']
+    
+
+
+engine = get_engine(host, user, password, database)
+# with engine.connect() as connection:
+#     q = "show databases"
+#     result = connection.execute(q)
+#     result = result.fetchall()
+#     for r in result:
+#         print(r)
 
 def store_ticks(engine, ticks):
     connection = engine.connect()
@@ -33,15 +52,7 @@ def store_ticks(engine, ticks):
             connection.execute(sqlInsertQuery)
         except :
             print("Error is some error while storing ticks")
-         
 
-
-host = 'localhost'
-user = 'root'
-password = ''
-database = 'ticks'
-
-engine = get_engine(host, user, password, database)
 
 def make_candles(instrument_token, duration, engine):
     with engine.connect() as connection:
@@ -87,7 +98,7 @@ def make_candles(instrument_token, duration, engine):
         print(candles)
         
 
-make_candles(100, "1min", engine)
+# make_candles(100, "1min", engine)
 
 
 # import csv
@@ -99,6 +110,7 @@ make_candles(100, "1min", engine)
 #         'timestamp' : '',
 #         'last_price' : ''
 #     }
+#     print('Inserting ticks')
 #     for row in csv_reader:
 #         if row:
 #             tick['last_price'] = row[0]
